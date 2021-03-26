@@ -26,6 +26,12 @@ ported for sparkfun esp32
  */
 
 #include <WiFi.h>
+
+/* Contains SSID and WPA password like so:
+ *  
+ * const char* ssid     = "my-network";
+ * const char* password = "s0-s0-s3cr3t";
+ */
 #include "credentials.h"
 
 int ledPin = 2;
