@@ -26,7 +26,7 @@ int iterate(double x, double y) {
 
     double zis = 0;
     double zrs = 0;
-    while ((iter < 50) && (zrs + zis < 4)) {
+    while ((iter < 150) && (zrs + zis < 4)) {
         double zrn = zrs - zis + x;
             double zin = zr * zi;
             zin += zin + y;
@@ -37,13 +37,25 @@ int iterate(double x, double y) {
             zis = zi * zi;
             iter++;
     }
-    return iter == 50 ? WHITE : BLACK;
+    return iter == 150 ? BLACK : WHITE;
+}
+
+void mandelDraw(double x0, double y0, double x1, double y1) {
+  for (int row = 0; row < SCREEN_HEIGHT; row++) {
+    double y = interpolate(0, SCREEN_HEIGHT, y0, y1, row);
+    for (int col = 0; col < SCREEN_WIDTH; col++) {
+      double x = interpolate(0, SCREEN_WIDTH, x0, x1, col);
+      int color = iterate(x, y);
+      display.drawPixel(col, row, color);
+    } 
+  }
+  display.display();
 }
 
 void setup() {
   // put your setup code here, to run once:
   Serial.begin(115200);
-
+  Serial.println("Hello Mandelbrot.");
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { 
     Serial.println(F("SSD1306 allocation failed"));
@@ -52,21 +64,31 @@ void setup() {
 
   // Clear the buffer
   display.clearDisplay();
-
-  double x0 = -0.75, x1 = 0.75, y0 = 0.5, y1 = 1;
-
-  for (int row = 0; row < SCREEN_HEIGHT; row++) {
-    double y = interpolate(0, SCREEN_HEIGHT, y0, y1, row);
-    for (int col = 0; col < SCREEN_WIDTH; col++) {
-      double x = interpolate(0, SCREEN_WIDTH, x0, x1, col);
-      int color = iterate(x, y);
-      display.drawPixel(col, row, color);
-    } 
-    display.display();
-  }
 }
+ 
+double x01 = -4, x11 = 4, y01 = -2, y11 = 2;
+double x02 = -0.118, x12 = 0.122, y02 = 0.982, y12 = 0.981;
+double t = 0;
+double dt = 0.02;
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  Serial.println(t);
+  double x0 = t * x01 + (1 - t) * x02;
+  double x1 = t * x11 + (1 - t) * x12;
+  double y0 = t * y01 + (1 - t) * y02;
+  double y1 = t * y11 + (1 - t) * y12;
 
+  mandelDraw(x0, y0, x1, y1);
+
+  t = t + dt; 
+
+  if (t > 1) {
+    t = 1;
+    dt = -dt;
+  }
+
+  if (t < 0) {
+    t = 0;
+    dt = -dt;
+  }
 }
