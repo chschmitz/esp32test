@@ -1,3 +1,3 @@
 # esp32test
 
-Playing with ESP32 microcontrollers.
+Playing with the ESP32 microcontroller.
