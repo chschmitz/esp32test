@@ -16,6 +16,12 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 
+/* Wiring: 
+ *  
+ *  OLED -> VCC to 3.3V, GND to GND, SCL to G22 = I2C1 CL, SDA to G21 = I2C1 DA
+ *  Rotary Encoder -> + to 3.3V, GND to GND, CLK to G32, DT to G33, SW to G25
+ */
+
 #define ROTARY_ENCODER_A_PIN 32
 #define ROTARY_ENCODER_B_PIN 33
 #define ROTARY_ENCODER_BUTTON_PIN 25
@@ -25,10 +31,12 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 String CMD_AUTH = "/rr_connect?password=";
-String CMD_LIST = "/rr_filelist?dir=macros/test"; 
+String CMD_LIST = "/rr_filelist?dir=macros/esp32"; 
+String CMD_MACRO = "/rr_gcode?gcode=M98%20P/macros/esp32/";
 
 String URL_AUTH = String(DUET_URL);
 String URL_LIST = String(DUET_URL);
+String URL_MACRO = String(DUET_URL);
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 AiEsp32RotaryEncoder rotaryEncoder = AiEsp32RotaryEncoder(ROTARY_ENCODER_A_PIN, ROTARY_ENCODER_B_PIN, ROTARY_ENCODER_BUTTON_PIN, ROTARY_ENCODER_VCC_PIN, ROTARY_ENCODER_STEPS);
@@ -53,6 +61,7 @@ void setup() {
   URL_AUTH.concat(CMD_AUTH);
   URL_AUTH.concat(DUET_PASSWD);
   URL_LIST.concat(CMD_LIST);
+  URL_MACRO.concat(CMD_MACRO);
 
   Serial.printf("Auth URL: %s\n", URL_AUTH.c_str());
   Serial.printf("List URL: %s\n", URL_LIST.c_str());
@@ -196,6 +205,13 @@ void displayMenu() {
   display.display();
 }
 
+void makeMacroRequest(int macro) {
+  String macroUrl(URL_MACRO);
+  macroUrl.concat(macros[macro]);
+  authenticate(http);
+  makeRequest(http, macroUrl);
+}
+
 void loop() { 
   rotaryLoop(); 
   int executeMacroLocal = NO_MACRO;
@@ -205,8 +221,15 @@ void loop() {
   portEXIT_CRITICAL(&mux);
 
   if (executeMacroLocal != NO_MACRO) {
-    Serial.printf("I would be executing %s right now.\n", macros[executeMacroLocal]); 
-    delay(1000);
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.setTextColor(SSD1306_WHITE);
+    display.println("Executing\n");
+    display.println(macros[executeMacroLocal]);
+    display.display();
+    makeMacroRequest(executeMacroLocal);
+    delay(3000);
+    displayMenu();
   }
   
   delay(100);
